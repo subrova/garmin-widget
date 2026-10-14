@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="cs"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f141b" media="(prefers-color-scheme: dark)"><meta name="theme-color" content="#eef1f5" media="(prefers-color-scheme: light)">
+<title>Garmin výzvy</title>
+<link rel="manifest" href="manifest.json">
+<style>body{margin:0;padding:16px;background:#0f141b;color:#fff}@media (prefers-color-scheme:light){body{background:#eef1f5;color:#1b2430}}body.gw-dark{background:#0f141b;color:#fff}body.gw-light{background:#eef1f5;color:#1b2430}</style></head>
+<body><div id="garmin-widget" data-lang="cs" data-src="data.json" data-refresh-url="refresh"></div>
+<script src="garmin-widget.js"></script>
+<script>document.addEventListener("gw-theme",function(e){document.body.className="gw-"+e.detail})</script></body></html>

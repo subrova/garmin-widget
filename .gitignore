@@ -1,0 +1,22 @@
+# virtualne prostredie a cache
+venv/
+__pycache__/
+
+# osobne / generovane udaje (nikdy do repozitara)
+data.json
+raw_challenges.json
+seen.json
+baseline.json
+history.json
+fetch.log
+*.log
+
+# lokalne ukazky a ručne ciele
+preview.html
+preview.json
+challenges.manual.json
+
+# tokeny a hesla
+.garminconnect/
+garmin_tokens.json
+.env

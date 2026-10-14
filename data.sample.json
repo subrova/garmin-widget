@@ -1,0 +1,6 @@
+{"updated":"2026-10-07T21:00:00","month":"2026-10","monthStart":"2026-10-01","monthEnd":"2026-10-31",
+"totals":{"steps":61200,"km":47.3,"minutes":180},
+"challenges":[
+{"name":"Kroky – měsíční výzva","unit":"steps","target":300000,"current":61200,"end":"2026-10-31"},
+{"name":"Kilometry – měsíční výzva","unit":"km","target":200,"current":47.3,"end":"2026-10-31"},
+{"name":"Aktivní minuty","unit":"minutes","target":600,"current":180,"end":"2026-10-31"}]}

@@ -1,0 +1,5 @@
+[
+  {"name": "Kroky - mesacna vyzva", "unit": "steps", "target": 300000},
+  {"name": "Kilometre - mesacna vyzva", "unit": "km", "target": 200},
+  {"name": "Aktivne minuty - mesacna vyzva", "unit": "minutes", "target": 600}
+]
