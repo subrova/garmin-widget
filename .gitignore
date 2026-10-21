@@ -1,0 +1,22 @@
+# virtual environment and caches
+venv/
+__pycache__/
+
+# personal / generated data (never commit)
+data.json
+raw_challenges.json
+seen.json
+baseline.json
+history.json
+fetch.log
+*.log
+
+# local previews and manual goals
+preview.html
+preview.json
+challenges.manual.json
+
+# tokens and passwords
+.garminconnect/
+garmin_tokens.json
+.env

@@ -1,0 +1,14 @@
+[Unit]
+Description=Garmin challenges widget (web + /refresh)
+After=network-online.target
+
+[Service]
+User=CHANGE_ME
+WorkingDirectory=/opt/garmin-widget
+Environment=REFRESH_KEY=CHANGE_ME_RANDOM
+Environment=REFRESH_MIN_GAP=60
+ExecStart=/opt/garmin-widget/venv/bin/python server.py --host 127.0.0.1 --port 8080
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
