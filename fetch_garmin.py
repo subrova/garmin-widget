@@ -10,7 +10,7 @@ Usage:
 After the first login (including the MFA code) the tokens are stored in
 ~/.garminconnect, so later runs no longer need the password.
 """
-import argparse, calendar, json, os, re, sys
+import argparse, calendar, json, os, re, sys, time
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
@@ -42,22 +42,79 @@ def pick(d, *keys):
 
 
 def month_totals(api, first, last):
-    """Monthly totals: steps, km, intensity minutes (vigorous counts double, like Garmin does)."""
+    """Monthly totals (steps, km, intensity minutes - vigorous counts double, like Garmin does),
+    the per-day values for the chart [{"date", "steps", "km", "minutes", "goal"}] and the number of failed days."""
+    upto = min(last, date.today())
     steps = dist_m = 0.0
-    days = api.get_daily_steps(first.isoformat(), min(last, date.today()).isoformat())
-    for d in days or []:
-        steps += d.get("totalSteps") or 0
-        dist_m += d.get("totalDistance") or 0
-    minutes = 0
+    per_day = {}
+    for d in api.get_daily_steps(first.isoformat(), upto.isoformat()) or []:
+        n, m = d.get("totalSteps") or 0, d.get("totalDistance") or 0
+        steps += n
+        dist_m += m
+        per_day[d["calendarDate"]] = {"steps": n, "km": round(m / 1000, 2), "goal": d.get("stepGoal")}
+    minutes = errors = 0
     cur = first
-    while cur <= min(last, date.today()):
+    while cur <= upto:
+        day_min = 0
         try:
             s = api.get_stats(cur.isoformat())
-            minutes += (s.get("moderateIntensityMinutes") or 0) + 2 * (s.get("vigorousIntensityMinutes") or 0)
+            day_min = (s.get("moderateIntensityMinutes") or 0) + 2 * (s.get("vigorousIntensityMinutes") or 0)
         except Exception as e:  # one bad day must not abort the whole run
+            errors += 1
             print(f"warn: stats {cur}: {e}", file=sys.stderr)
+        minutes += day_min
+        per_day.setdefault(cur.isoformat(), {"steps": 0, "km": 0, "goal": None})["minutes"] = day_min
         cur = date.fromordinal(cur.toordinal() + 1)
-    return {"steps": round(steps), "km": round(dist_m / 1000, 2), "minutes": round(minutes)}
+    daily = [{"date": k, "steps": v["steps"], "km": v["km"], "minutes": v.get("minutes", 0), "goal": v["goal"]}
+             for k, v in sorted(per_day.items())]
+    return {"steps": round(steps), "km": round(dist_m / 1000, 2), "minutes": round(minutes)}, daily, errors
+
+
+def sports_summary(api, first, last):
+    """Time spent per sport this month, from the recorded activities (duration = elapsed time, the same
+    measure Garmin uses for its walking challenges): [{"type", "minutes", "count", "km"}], longest first."""
+    try:
+        acts = api.get_activities_by_date(first.isoformat(), min(last, date.today()).isoformat()) or []
+    except Exception as e:
+        print(f"warn: activities: {e}", file=sys.stderr)
+        return []
+    agg = {}
+    for a in acts:
+        t = (a.get("activityType") or {}).get("typeKey") or "other"
+        r = agg.setdefault(t, {"type": t, "minutes": 0.0, "count": 0, "km": 0.0})
+        r["minutes"] += (a.get("duration") or 0) / 60
+        r["count"] += 1
+        r["km"] += (a.get("distance") or 0) / 1000
+    return sorted(({**r, "minutes": round(r["minutes"], 1), "km": round(r["km"], 2)} for r in agg.values()),
+                  key=lambda r: -r["minutes"])
+
+
+MONTHS_CACHE = HERE / "months.json"  # totals of finished months (computed once, they do not change)
+YEAR_BUDGET_S = 150  # max seconds per run spent on computing missing months; the rest is done by the next runs
+
+
+def year_overview(api, today, current):
+    """Monthly totals of the current year: finished months come from the cache (missing ones are computed,
+    oldest first, within a time budget), the running month is `current`."""
+    try:
+        cache = json.loads(MONTHS_CACHE.read_text())
+    except Exception:
+        cache = {}
+    y, started = today.year, time.time()
+    for m in range(1, today.month):
+        key = f"{y}-{m:02d}"
+        late_sync = today.day <= 3 and m == today.month - 1  # the previous month may still receive late synced data
+        if key in cache and not late_sync:
+            continue
+        if time.time() - started > YEAR_BUDGET_S:
+            break
+        totals, _, errors = month_totals(api, date(y, m, 1), date(y, m, calendar.monthrange(y, m)[1]))
+        if errors == 0:
+            cache[key] = totals
+            MONTHS_CACHE.write_text(json.dumps(cache, indent=2))
+    months = [{"month": k, **cache[k]} for k in sorted(cache) if k.startswith(f"{y}-") and k < f"{y}-{today.month:02d}"]
+    months.append({"month": f"{y}-{today.month:02d}", **current})
+    return {"year": y, "months": months}
 
 
 UNIT_MAP = {  # Garmin unit/metric name -> our unit
@@ -103,18 +160,48 @@ def normalize_challenge(c, source):
         "current": None if progress is None else round(float(progress) * mult, 2),
         "start": str(start)[:10] if start else None, "end": str(end)[:10] if end else None,
         "earned": bool(c.get("badgeEarnedDate")),
+        "earnedDate": (c.get("badgeEarnedDate") or "")[:10] or None,
     }
 
 
 SEEN = HERE / "seen.json"
-DONE_RATIO = 0.8  # a challenge that vanished from the API before its end, last seen at >= 80 %, counts as completed
+BADGES_SHOWN = 30  # how many of the latest earned badges go into data.json (the widget shows data-badges of them, default 10)
 
 
-def remember_completed(out, first, last):
-    """Garmin drops a completed challenge from the "non-completed" list. We remember the
-    challenges we have seen, and if one vanishes before its deadline (and was almost done,
-    or has no measurable goal), we show it as completed."""
-    today = date.today().isoformat()
+def strip_key(badge_key):
+    return re.sub(r"_\d{4}_\d{2}$", "", badge_key or "")
+
+
+def earned_badges(api):
+    """Earned badges from Garmin, newest first: (list for data.json, index "key|start date" -> badge)."""
+    try:
+        badges = api.get_earned_badges() or []
+    except Exception as e:
+        print(f"warn: earned badges: {e}", file=sys.stderr)
+        return [], {}
+    badges = sorted((b for b in badges if b.get("badgeEarnedDate")), key=lambda b: b["badgeEarnedDate"], reverse=True)
+    index = {}
+    for b in badges:
+        index.setdefault(f'{strip_key(b.get("badgeKey"))}|{(b.get("badgeStartDate") or "")[:10]}', b)
+    shown = []
+    for b in badges[:BADGES_SHOWN]:
+        key = strip_key(b.get("badgeKey"))
+        # expeditions ("virtual_*" badges): never translated; elevation unit = climb, distance unit = hike
+        expedition = None
+        if key.startswith("virtual_"):
+            expedition = "climb" if b.get("badgeUnitId") == 2 else "hike"
+        kind = "expedition" if expedition else "challenge" if key.startswith("challenge_") else "other"
+        shown.append({"key": key, "name": b.get("badgeName") if expedition else NAMES_CS.get(key, b.get("badgeName")),
+                      "name_en": b.get("badgeName"), "translated": True if expedition else key in NAMES_CS,
+                      "expedition": expedition, "kind": kind, "date": b["badgeEarnedDate"][:10],
+                      "points": b.get("badgePoints"), "count": b.get("badgeEarnedNumber")})
+    return shown, index
+
+
+def remember_completed(out, first, last, badge_index):
+    """Garmin drops a completed challenge from the "non-completed" list. We remember the challenges we have
+    seen; when one vanishes, the earned badges tell whether it was really completed (and when). Completed
+    challenges stay visible (greyed out) until the end of the month; vanished ones without a badge are dropped."""
     try:
         seen = json.loads(SEEN.read_text())
     except Exception:
@@ -129,10 +216,11 @@ def remember_completed(out, first, last):
         if n["end"] and n["end"] < first.isoformat():
             del seen[k]  # old challenge from a previous period
             continue
-        if k in now or n["key"] in HIDE or (n["end"] and n["end"] < today) or n["start"] > last.isoformat():
+        if k in now or n["key"] in HIDE or (n["start"] or "") > last.isoformat():
             continue
-        if n["kind"] == "flag" or (n["target"] and n["current"] >= DONE_RATIO * n["target"]):
-            done = dict(n, earned=True, inferred=True)
+        badge = badge_index.get(k)
+        if badge:
+            done = dict(n, earned=True, inferred=True, earnedDate=badge["badgeEarnedDate"][:10])
             if n["kind"] == "progress":
                 done["current"] = done["target"]
             out.append(done)
@@ -271,7 +359,8 @@ def challenges(api, first, last, totals):
             out.append(n)
     (HERE / "raw_challenges.json").write_text(json.dumps(raw, indent=2, ensure_ascii=False))
 
-    out = remember_completed(out, first, last)
+    badges, badge_index = earned_badges(api)
+    out = remember_completed(out, first, last, badge_index)
     apply_today(out, api)
 
     # display order from order.json (keys); unknown ones go last
@@ -285,7 +374,7 @@ def challenges(api, first, last, totals):
             out.append({"name": m["name"], "source": "manual", "unit": m["unit"],
                         "target": m["target"], "current": totals[m["unit"]],
                         "start": first.isoformat(), "end": last.isoformat()})
-    return out
+    return out, badges
 
 
 def main():
@@ -299,12 +388,13 @@ def main():
     last = date(y, m, calendar.monthrange(y, m)[1])
 
     api = login()
-    totals = month_totals(api, first, last)
+    totals, daily, _ = month_totals(api, first, last)
+    chal, badges = challenges(api, first, last, totals)
     data = {
         "updated": datetime.now().isoformat(timespec="seconds"),
         "user": api.get_full_name(),
         "month": f"{y}-{m:02d}", "monthStart": first.isoformat(), "monthEnd": last.isoformat(),
-        "totals": totals, "challenges": challenges(api, first, last, totals),
+        "totals": totals, "daily": daily, "sports": sports_summary(api, first, last), "year": year_overview(api, today, totals) if (first.year, first.month) == (today.year, today.month) else None, "challenges": chal, "badges": badges,
     }
     Path(a.out).write_text(json.dumps(data, indent=2, ensure_ascii=False))
     print(f"OK -> {a.out}: {totals}, challenges: {len(data['challenges'])}")

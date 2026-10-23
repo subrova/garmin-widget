@@ -12,7 +12,7 @@ Downloads this month's steps, km, active minutes and challenges from Garmin Conn
 | `garmin-widget.service` | systemd service for the server |
 | `TODO.md` | ideas and open items |
 
-The server never serves non-public files (`seen.json`, `raw_challenges.json`, `history.json`, tokens).
+The server never serves non-public files (`seen.json`, `raw_challenges.json`, `history.json`, `months.json`, tokens).
 
 The widget UI is available in Czech and English (switch with the CS/EN button). Challenge names come from Garmin in English; Czech names are kept in `names.cs.json`. The code and documentation are in English.
 
@@ -51,7 +51,7 @@ The tokens are stored in `~/.garminconnect`, after which the password is no long
 */30 * * * * cd /opt/garmin-widget && ./venv/bin/python fetch_garmin.py >> fetch.log 2>&1
 ```
 
-More frequent downloads help catch challenges that Garmin removes once they are completed (see `seen.json`).
+Garmin removes a challenge from its "non-completed" list once it is completed. The fetch remembers the challenges it has seen (`seen.json`) and confirms a vanished one against Garmin's earned badges, so a completed challenge stays visible (greyed out, with its completion date) until the end of the month. A vanished challenge without a matching badge (e.g. one you left) is dropped.
 
 Every run also builds the start-of-day progress of each challenge (`hist` in `data.json`); the widget derives the recent pace from it. Where possible it is **computed from Garmin's per-day data**, following the rules Garmin uses for the challenges: steps per day (step challenges), total duration of walking activities ("walk N hours"), total distance of walking activities ("walk N mi") and the number of activities lasting at least 20 minutes ("N activities"). This also fills in the days before the first download. The computed sum must match the progress Garmin reports for the challenge; otherwise (or for challenges without a rule) the fetch falls back to **snapshots** of the progress taken at the first download of each day, stored in `history.json` (last 62 days). Until at least 3 days of history exist, the widget falls back to the average over the whole period so far. Rules live in `CHALLENGE_RULES` in `fetch_garmin.py`; challenges of other types simply use snapshots.
 
@@ -82,12 +82,21 @@ Optional attributes on the widget element:
 - `data-lang="cs|en"` – default language (otherwise the browser language is used, falling back to English); `data-lang-toggle="off"` hides the CS/EN button.
 - `data-pace-days="7"` – how many of the last complete days are used to compute the pace (the colour of the daily-average line and the estimate on the right). Default 7, range 2–60. Needs a few days of history (see below).
 - `data-reload-minutes="15"` – how often an open page re-reads `data.json` (minutes, default 15, minimum 1, `0` turns the automatic reload off). This only reloads what the server already has; fresh data from Garmin still depends on the cron job and the ↻ button.
+- `data-tab="challenges|month|year"` – the tab shown at start (otherwise the last tab used, remembered in the browser).
+- `data-badges="10"` – how many of the latest earned badges the Year tab lists (default 10, maximum 30).
 
 The choices made with the buttons are remembered in the browser (`localStorage`).
 
+## Tabs
+
+- **Challenges** – the challenge cards (progress, daily goal, pace, estimate). A summary line above the cards says how many challenges are on track (completed ones count as on track), e.g. "On track for 4 of 5 challenges · 1 completed", or "All challenges completed".
+- **Month** – a bar chart of steps / km / active minutes for every day of the current month (switch with the pills above the chart; tap a bar to see its day; for steps the dashed line follows the daily step goal set in Garmin, which can change from day to day; the yellow bar is today). The per-day values come from the `daily` list in `data.json`. Below the chart a card shows the time spent per sport this month (stacked bar and list with time, share and number of activities; the top 4 sports, the rest merged into "other"), from the `sports` list in `data.json`. It is the duration of the recorded activities, not Garmin's intensity minutes.
+
+- **Year** – a bar chart per month of the current year (steps / km / active minutes, same pills; tap a bar for the month and its daily average; the yellow bar is the running month), plus the year total and the best month. The data is the `year` list in `data.json`. Below it a card lists the latest earned badges (name, date, points) from the `badges` list; badge names use `names.cs.json` like challenges do (names without a translation stay in English). Expeditions (Garmin's `virtual_*` badges) are recognised automatically: they keep their English names and get an icon – a mountain for a climb (elevation goal) or a route for a hike (distance goal). Totals of finished months are computed once and cached in `months.json`; the first run on a new installation therefore needs about two minutes (limited to 150 seconds per run, the rest is finished by the next run), later runs only recompute the running month. The previous month is recomputed during the first 3 days of a month to catch late synced data.
+
 ## What changes month by month
 
-- New challenges are shown in English with a `!` – add them to `names.cs.json` (the key is in `data.json`) and, if needed, to `order.json`.
+- New challenges are shown in English until they are translated – add them to `names.cs.json` (the key is in `data.json`) and, if needed, to `order.json`.
 - The rest (month, totals, days left) is recalculated automatically.
 
 ## Later: embedding in a Rails app (Heroku)
