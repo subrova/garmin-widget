@@ -2,7 +2,8 @@
  *   <div id="garmin-widget" data-src="https://your.site/data.json"></div>
  *   <script src="garmin-widget.js"></script>
  * Optional attributes: data-refresh-url, data-theme="light|dark", data-theme-toggle="off",
- *                      data-lang="cs|en", data-lang-toggle="off", data-pace-days="7", data-reload-minutes="15", data-tab="challenges|month|year", data-badges="10"
+ *                      data-lang="cs|en", data-lang-toggle="off", data-pace-days="7", data-reload-minutes="15", data-tab="challenges|month|year", data-badges="10",
+ *                      data-year-goal-steps="300000", data-year-goal-km="220", data-year-goal-hours="30"
  */
 (function () {
   // ---- UI texts (languages: cs, en) ----
@@ -26,7 +27,7 @@
       starts: " – začíná ", waiting: "čeká na start", running: "probíhá",
       noGoal: "údaje o cíli nejsou k dispozici",
       updated: "Aktualizováno ", reload: "Načíst znovu", mode: "Režim: ", light: "světlý", dark: "tmavý",
-      error: "Chyba načtení: ", langTitle: "Jazyk: čeština",
+      error: "Chyba načtení: ", stale: "Nové údaje se nepodařilo načíst, zobrazují se poslední známé", langTitle: "Jazyk: čeština",
       tabs: { challenges: "Výzvy", month: "Měsíc", year: "Rok" },
       monthsShort: ["Led", "Úno", "Bře", "Dub", "Kvě", "Čvn", "Čvc", "Srp", "Zář", "Říj", "Lis", "Pro"],
       yearTotal: "Celkem za rok: ", bestMonth: "Nejlepší měsíc: ", perDayAvg: function (x) { return "Ø " + x + " / den"; },
@@ -36,6 +37,7 @@
       expedition: { climb: "Výstup", hike: "Túra" },
       badgeKind: { challenge: "Výzva", other: "Odznak" },
       badgesTitle: "Poslední odznaky", pts: function () { return "b."; },
+      avgTitle: "Průměrná délka aktivity",
       sportsTitle: "Čas podle sportu", times: function (n) { return n + "×"; },
       sports: { walking: "Chůze", archery: "Lukostřelba", jump_rope: "Švihadlo", running: "Běh", cycling: "Cyklistika", hiking: "Turistika", strength_training: "Silový trénink", yoga: "Jóga", swimming: "Plavání", indoor_cardio: "Kardio", other: "Ostatní" },
       goalLabel: "cíl ", chartAvg: "Průměr za den: ", chartBest: "Nejlepší den: ", noData: "data po dnech nejsou k dispozici"
@@ -58,7 +60,7 @@
       starts: " – starts ", waiting: "not started", running: "in progress",
       noGoal: "no goal data available",
       updated: "Updated ", reload: "Reload", mode: "Mode: ", light: "light", dark: "dark",
-      error: "Load error: ", langTitle: "Language: English",
+      error: "Load error: ", stale: "Could not load new data, showing the last known", langTitle: "Language: English",
       tabs: { challenges: "Challenges", month: "Month", year: "Year" },
       monthsShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
       yearTotal: "Year total: ", bestMonth: "Best month: ", perDayAvg: function (x) { return "avg " + x + " / day"; },
@@ -68,6 +70,7 @@
       expedition: { climb: "Climb", hike: "Hike" },
       badgeKind: { challenge: "Challenge", other: "Badge" },
       badgesTitle: "Latest badges", pts: function (n) { return n === 1 ? "pt" : "pts"; },
+      avgTitle: "Average activity length",
       sportsTitle: "Time by sport", times: function (n) { return n + "×"; },
       sports: { walking: "Walking", archery: "Archery", jump_rope: "Jump rope", running: "Running", cycling: "Cycling", hiking: "Hiking", strength_training: "Strength training", yoga: "Yoga", swimming: "Swimming", indoor_cardio: "Cardio", other: "Other" },
       goalLabel: "goal ", chartAvg: "Daily average: ", chartBest: "Best day: ", noData: "no per-day data available"
@@ -83,7 +86,7 @@
   var css = ".gw{" + DARK + "}" +
     "@media (prefers-color-scheme:light){.gw:not(.gw-dark){" + LIGHT + "}}" +
     ".gw.gw-light{" + LIGHT + "}.gw.gw-dark{" + DARK + "}" +
-    ".gw{font-family:system-ui,sans-serif;display:grid;gap:10px;max-width:480px}" +
+    ".gw{font-family:system-ui,sans-serif;display:grid;gap:10px;max-width:480px;touch-action:pan-y;overflow-x:clip}" +
     ".gw-c{background:var(--gw-card);color:var(--gw-txt);border:1px solid var(--gw-line);border-radius:14px;padding:12px 14px}" +
     ".gw-h{display:flex;justify-content:space-between;font-weight:600}" +
     ".gw-bar{height:8px;background:var(--gw-bar);border-radius:4px;margin:8px 0;overflow:hidden}" +
@@ -102,6 +105,11 @@
     ".gw-rf{background:none;border:0;padding:0 2px;margin-left:4px;font:inherit;font-size:16px;line-height:1;color:var(--gw-mut);cursor:pointer}" +
     "@keyframes gw-spin{to{transform:rotate(360deg)}}.gw-rf.gw-spin{display:inline-block;animation:gw-spin .8s linear infinite}" +
     ".gw-td{margin-top:2px}" +
+    "@keyframes gw-in-next{from{opacity:.3;transform:translateX(16px)}to{opacity:1;transform:none}}" +
+    "@keyframes gw-in-prev{from{opacity:.3;transform:translateX(-16px)}to{opacity:1;transform:none}}" +
+    ".gw-sl-next .gw-tabs ~ *{animation:gw-in-next .22s ease-out}.gw-sl-prev .gw-tabs ~ *{animation:gw-in-prev .22s ease-out}" +
+    "@media (prefers-reduced-motion:reduce){.gw .gw-tabs ~ *{animation:none!important}}" +
+    ".gw-stale{color:var(--gw-warn);cursor:help}" +
     ".gw-ex{display:inline-block;vertical-align:-2px;margin-right:6px;color:var(--gw-mut)}" +
     ".gw-sum{margin:6px 2px 2px;font-size:15px;font-weight:600}" +
     ".gw-sbar{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:8px 0}.gw-sbar i{display:block;height:100%}" +
@@ -192,6 +200,8 @@
     return '<button class="gw-lg" type="button" title="' + S.langTitle + '">' + FLAG[l] + "</button>";
   }
   function render(el, d) {
+    // the stylesheet is added to <head> once; putting a <style> into the re-rendered markup made the page flash on every tab switch
+    if (!document.getElementById("gw-style")) { var st = document.createElement("style"); st.id = "gw-style"; st.textContent = css; document.head.appendChild(st); }
     var lang = el.getAttribute("data-lang");
     var paceDays = Math.max(2, Math.min(60, parseInt(el.getAttribute("data-pace-days"), 10) || 7));  // length of the pace window
     S = STR[lang];
@@ -264,7 +274,13 @@
         return '<div class="gw-sr"><span><i class="gw-dot" style="background:' + color(i, x.type) + '"></i>' + nameOf(x.type) + "</span><span>" +
           val(x.minutes, "minutes") + " · " + Math.round(x.minutes / total * 100) + " % · " + S.times(x.count) + "</span></div>";
       }).join("");
-      return '<div class="gw-c"><div class="gw-h"><span>' + S.sportsTitle + "</span><span>" + val(total, "minutes") + '</span></div><div class="gw-sbar">' + bar + "</div>" + rows + "</div>";
+      // second card: average length of one activity per sport (and overall)
+      var count = top.reduce(function (a, b) { return a + b.count; }, 0);
+      var avgRows = top.filter(function (x) { return x.count > 0; }).map(function (x, i) {
+        return '<div class="gw-sr"><span><i class="gw-dot" style="background:' + color(i, x.type) + '"></i>' + nameOf(x.type) + "</span><span>" + val(x.minutes / x.count, "minutes") + "</span></div>";
+      }).join("");
+      return '<div class="gw-c"><div class="gw-h"><span>' + S.sportsTitle + "</span><span>" + val(total, "minutes") + '</span></div><div class="gw-sbar">' + bar + "</div>" + rows + "</div>" +
+        '<div class="gw-c"><div class="gw-h"><span>' + S.avgTitle + "</span><span>" + (count ? val(total / count, "minutes") : "–") + "</span></div>" + avgRows + "</div>";
     }
     // "Year" tab: bar chart of the chosen metric per month of the current year
     function yearTab() {
@@ -282,7 +298,12 @@
       if (isNaN(sel) || sel < 0 || sel > 11 || vals[sel] == null) sel = keys.indexOf(nowKey);
       var dim = function (i) { return keys[i] === nowKey ? +iso.slice(8) : new Date(yr.year, i + 1, 0).getDate(); };  // days counted in the month
       var W = 320, H = 150, pl = 4, pr = 4, pt = 14, pb = 18, slot = (W - pl - pr) / 12, bw = slot * 0.7;
-      var max = Math.max.apply(null, vals.filter(function (v) { return v != null; }).concat([1])) * 1.1;
+      // monthly goal line, configurable per metric (0 turns it off): data-year-goal-steps (default 300000),
+      // data-year-goal-km (default 220), data-year-goal-hours (default 30, active minutes)
+      var gAttr = function (name, def) { var n = parseFloat(el.getAttribute(name)); return isNaN(n) ? def : n; };
+      var goal = metric === "steps" ? gAttr("data-year-goal-steps", 300000) : metric === "km" ? gAttr("data-year-goal-km", 220) : gAttr("data-year-goal-hours", 30) * 60;
+      if (!(goal > 0)) goal = 0;
+      var max = Math.max.apply(null, vals.filter(function (v) { return v != null; }).concat([goal, 1])) * 1.1;
       var y = function (v) { return pt + (H - pt - pb) * (1 - v / max); };
       var svg = '<svg class="gw-chart" viewBox="0 0 ' + W + " " + H + '" role="img">';
       keys.forEach(function (k, i) {
@@ -291,6 +312,8 @@
         if (v == null || v <= 0) return;
         svg += '<rect class="gw-b' + (k === nowKey ? " gw-today" : "") + (i === sel ? " gw-sel" : "") + '" data-y="' + i + '" x="' + (pl + i * slot + (slot - bw) / 2).toFixed(1) + '" y="' + y(v).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + (H - pb - y(v)).toFixed(1) + '" rx="1.5"><title>' + S.months[i] + " – " + f(v) + "</title></rect>";
       });
+      if (goal) svg += '<line class="gw-goal" x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y(goal).toFixed(1) + '" y2="' + y(goal).toFixed(1) + '"/>' +
+        '<text class="gw-ax" text-anchor="end" x="' + (W - pr) + '" y="' + (y(goal) - 3).toFixed(1) + '">' + S.goalLabel + (metric === "steps" ? fmt(goal, 0) : f(goal)) + "</text>";
       svg += "</svg>";
       var pills = ["steps", "km", "minutes"].map(function (mm) { return '<button class="gw-pill' + (mm === metric ? " gw-on" : "") + '" type="button" data-m="' + mm + '">' + S.metrics[mm] + "</button>"; }).join("");
       var per = vals[sel] != null ? " (" + S.perDayAvg(f(vals[sel] / dim(sel))) + ")" : "";
@@ -306,7 +329,7 @@
         var k = b.expedition || b.kind || "other", ico = '<span class="gw-ex" title="' + (S.expedition[k] || S.badgeKind[k]) + '">' + EXP_ICON[k] + "</span>";
         return '<div class="gw-sr"><span>' + ico + nm(b, lang) + "</span><span>" + dm(b.date) + (b.points ? " · " + b.points + " " + S.pts(b.points) : "") + "</span></div>";
       }).join("");
-      return '<div class="gw-c"><div class="gw-h"><span>' + S.badgesTitle + "</span></div>" + rows + "</div>";
+      return '<div class="gw-c"><div class="gw-h" style="margin-bottom:8px"><span>' + S.badgesTitle + "</span></div>" + rows + "</div>";
     }
     (d.challenges || []).forEach(function (c) {
       if (c.kind === "flag") { flags.push(c); return; }
@@ -346,11 +369,13 @@
       if (!future) { sumTotal++; if (!rem) { sumDone++; sumOk++; } else if (!over && onPace) sumOk++; }
       var tail = rem ? (over ? S.endedOn + dm(c.end)
         : S.perDay(val(perDay, c.unit, true), cl) + (future ? S.starts + dm(c.start) : ""))
-        : S.done + (c.earnedDate ? " " + dm(c.earnedDate) : "");
+        : "";
+      // completed: "done + date" takes the place of the "remaining" label and the daily-goal row is left out
+      var right = rem ? S.left(rest(rem, c.unit)) : S.done + (c.earnedDate ? " " + dm(c.earnedDate) : "");
       html += '<div class="gw-c' + (rem ? "" : " gw-done") + '"><div class="gw-h"><span>' + nm(c, lang) + "</span><span>" + pct + " %</span></div>" +
         '<div class="gw-bar"><i style="width:' + pct + '%"></i></div>' +
-        '<div class="gw-r"><span>' + val(c.current, c.unit) + " / " + val(c.target, c.unit, true) + "</span><span>" + (rem ? S.left(rest(rem, c.unit)) : "") + "</span></div>" +
-        '<div class="gw-d"' + (rem && !future ? ' style="color:' + (over ? "var(--gw-bad)" : onPace ? "var(--gw-ok)" : "var(--gw-warn)") + '"' : "") + "><span>" + tail + "</span>" + (proj ? '<span class="gw-p">' + proj + "</span>" : "") + "</div>" + todayLine + "</div>";
+        '<div class="gw-r"><span>' + val(c.current, c.unit) + " / " + val(c.target, c.unit, true) + "</span><span>" + right + "</span></div>" +
+        (rem ? '<div class="gw-d"' + (!future ? ' style="color:' + (over ? "var(--gw-bad)" : onPace ? "var(--gw-ok)" : "var(--gw-warn)") + '"' : "") + "><span>" + tail + "</span>" + (proj ? '<span class="gw-p">' + proj + "</span>" : "") + "</div>" : "") + todayLine + "</div>";
     });
     if (flags.length) {
       html += '<div class="gw-f">' + flags.map(function (c) {
@@ -367,9 +392,11 @@
     }
     var tab = ["month", "year"].indexOf(el.getAttribute("data-tab")) >= 0 ? el.getAttribute("data-tab") : "challenges";
     var tabsBar = '<div class="gw-tabs">' + ["challenges", "month", "year"].map(function (k) { return '<button class="gw-tab' + (k === tab ? " gw-on" : "") + '" type="button" data-t="' + k + '">' + S.tabs[k] + "</button>"; }).join("") + "</div>";
-    el.innerHTML = "<style>" + css + '</style><div class="gw gw-' + el.getAttribute("data-theme") + '"><h2 class="gw-m">' + title(d, '<span class="gw-ctl">' + langBtn(el) + themeBtn(el) + "</span>") + "</h2>" + totals(d) + tabsBar + (tab === "month" ? monthTab() : tab === "year" ? yearTab() : summary + html) +
-      '<div class="gw-u"><span>' + S.updated + stamp(d.updated) + ' <button class="gw-rf" type="button" title="' + S.reload + '">↻</button></span>' +
+    el.innerHTML = '<div class="gw gw-'  + el.getAttribute("data-theme") + (el._gwSlide ? " gw-sl-" + el._gwSlide : "") + '"><h2 class="gw-m">' + title(d, '<span class="gw-ctl">' + langBtn(el) + themeBtn(el) + "</span>") + "</h2>" + totals(d) + tabsBar + (tab === "month" ? monthTab() : tab === "year" ? yearTab() : summary + html) +
+      '<div class="gw-u"><span>' + S.updated + stamp(d.updated) + ' <button class="gw-rf" type="button" title="' + S.reload + '">↻</button>' +
+        (el._gwStale ? ' <span class="gw-stale" title="' + S.stale + '">⚠</span>' : "") + "</span>" +
       '<span><a class="gw-cr" href="' + REPO + '" target="_blank" rel="noopener">© ' + new Date().getFullYear() + " Sharkie</a></span></div></div>";
+    el._gwSlide = null;
   }
   function init(el) {
     var src = el.getAttribute("data-src") || "data.json";
@@ -393,12 +420,34 @@
       b.innerHTML = ICON[next]; b.title = S.mode + S[next];
       announce();
     });
+    var TABS = ["challenges", "month", "year"];
+    function switchTab(next, slide) {
+      el.setAttribute("data-tab", next);
+      try { localStorage.setItem("gw-tab", next); } catch (err) {}
+      el._gwSlide = slide || null;
+      render(el, el._gwData);
+    }
+    // swipe left / right switches to the next / previous tab (touch screens)
+    var sx = 0, sy = 0, st = 0;
+    el.addEventListener("touchstart", function (e) {
+      if (e.touches.length !== 1) { st = 0; return; }
+      sx = e.touches[0].clientX; sy = e.touches[0].clientY; st = Date.now();
+    }, { passive: true });
+    el.addEventListener("touchend", function (e) {
+      if (!st || !el._gwData) return;
+      var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy, quick = Date.now() - st < 700;
+      st = 0;
+      if (!quick || Math.abs(dx) < 60 || Math.abs(dx) < 1.6 * Math.abs(dy)) return;  // too short, too slow or rather vertical
+      var cur = TABS.indexOf(el.getAttribute("data-tab") === "month" || el.getAttribute("data-tab") === "year" ? el.getAttribute("data-tab") : "challenges");
+      var next = TABS[cur + (dx < 0 ? 1 : -1)];
+      if (next) switchTab(next, dx < 0 ? "next" : "prev");
+    }, { passive: true });
     // tabs, metric pills and chart bars: re-render from the data already loaded
     el.addEventListener("click", function (e) {
       var t = e.target.closest && e.target.closest(".gw-tab, .gw-pill, .gw-b"); if (!t || !el._gwData) return;
       if (t.classList.contains("gw-tab")) {
-        el.setAttribute("data-tab", t.getAttribute("data-t"));
-        try { localStorage.setItem("gw-tab", t.getAttribute("data-t")); } catch (err) {}
+        switchTab(t.getAttribute("data-t"));
+        return;
       } else if (t.classList.contains("gw-pill")) el.setAttribute("data-metric", t.getAttribute("data-m"));
       else if (t.hasAttribute("data-y")) el.setAttribute("data-ysel", t.getAttribute("data-y"));
       else el.setAttribute("data-sel", t.getAttribute("data-i"));
@@ -412,17 +461,32 @@
       try { localStorage.setItem("gw-lang", next); } catch (err) {}
       render(el, el._gwData);
     });
-    function load() {
-      return fetch(src + (src.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now()).then(function (r) { return r.json(); })
-        .then(function (d) { el._gwData = d; render(el, d); announce(); }).catch(function (e) { S = STR[el.getAttribute("data-lang")]; el.textContent = S.error + e; });
+    // load data.json; a failed request (typical on a mobile network that just woke up) is retried a few
+    // times and never wipes what is already shown - the last known data stays with a warning marker
+    var lastOk = 0;
+    function load(tries) {
+      tries = tries || 0;
+      return fetch(src + (src.indexOf("?") < 0 ? "?" : "&") + "t=" + Date.now(), { cache: "no-store" }).then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      }).then(function (d) { lastOk = Date.now(); el._gwStale = false; el._gwData = d; render(el, d); announce(); })
+        .catch(function (e) {
+          if (tries < 3) return new Promise(function (ok) { setTimeout(ok, 2000 * (tries + 1)); }).then(function () { return load(tries + 1); });
+          S = STR[el.getAttribute("data-lang")];
+          if (el._gwData) { el._gwStale = true; render(el, el._gwData); } else el.textContent = S.error + e;
+        });
     }
+    // refresh when the page comes back to the foreground or the network returns (if the data is older than 2 minutes)
+    function wake() { if (Date.now() - lastOk > 120000) load(); }
+    document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") wake(); });
+    window.addEventListener("online", function () { load(); });
     // manual refresh: optionally calls data-refresh-url (a server that runs fetch_garmin.py), then reloads data.json
     el.addEventListener("click", function (e) {
       var b = e.target.closest && e.target.closest(".gw-rf"); if (!b || b.classList.contains("gw-spin")) return;
       b.classList.add("gw-spin");
       var url = el.getAttribute("data-refresh-url");
       var t0 = Date.now();
-      (url ? fetch(url, { method: "POST" }).catch(function () {}) : Promise.resolve()).then(load).then(function () {
+      (url ? fetch(url, { method: "POST" }).catch(function () {}) : Promise.resolve()).then(function () { return load(); }).then(function () {
         var nb = el.querySelector(".gw-rf"); if (nb) nb.classList.add("gw-spin");
         setTimeout(function () { var x = el.querySelector(".gw-rf"); if (x) x.classList.remove("gw-spin"); }, Math.max(0, 700 - (Date.now() - t0)));
       });
@@ -431,7 +495,7 @@
     // auto-reload interval in minutes (data-reload-minutes, default 15, minimum 1, 0 = off)
     var attr = el.getAttribute("data-reload-minutes"), mins = attr === null || attr === "" ? 15 : parseFloat(attr);
     if (isNaN(mins)) mins = 15;
-    if (mins > 0) setInterval(load, Math.max(1, mins) * 60 * 1000);
+    if (mins > 0) setInterval(function () { load(); }, Math.max(1, mins) * 60 * 1000);
   }
   function go() { var e = document.querySelectorAll("#garmin-widget,[data-garmin-widget]"); for (var i = 0; i < e.length; i++) init(e[i]); }
   document.readyState === "loading" ? document.addEventListener("DOMContentLoaded", go) : go();
