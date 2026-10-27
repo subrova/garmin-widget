@@ -34,6 +34,14 @@ def login():
         return api
 
 
+def write_private(path, text):
+    """Writes a file that only the owner can read (it holds personal health data)."""
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8") as f:
+        f.write(text)
+    os.chmod(path, 0o600)  # also tightens files created earlier with looser permissions
+
+
 def pick(d, *keys):
     for k in keys:
         if isinstance(d, dict) and d.get(k) is not None:
@@ -98,6 +106,7 @@ def year_overview(api, today, current):
     oldest first, within a time budget), the running month is `current`."""
     try:
         cache = json.loads(MONTHS_CACHE.read_text())
+        os.chmod(MONTHS_CACHE, 0o600)  # tighten the permissions of a cache created earlier
     except Exception:
         cache = {}
     y, started = today.year, time.time()
@@ -111,7 +120,7 @@ def year_overview(api, today, current):
         totals, _, errors = month_totals(api, date(y, m, 1), date(y, m, calendar.monthrange(y, m)[1]))
         if errors == 0:
             cache[key] = totals
-            MONTHS_CACHE.write_text(json.dumps(cache, indent=2))
+            write_private(MONTHS_CACHE, json.dumps(cache, indent=2))
     months = [{"month": k, **cache[k]} for k in sorted(cache) if k.startswith(f"{y}-") and k < f"{y}-{today.month:02d}"]
     months.append({"month": f"{y}-{today.month:02d}", **current})
     return {"year": y, "months": months}
@@ -224,7 +233,7 @@ def remember_completed(out, first, last, badge_index):
             if n["kind"] == "progress":
                 done["current"] = done["target"]
             out.append(done)
-    SEEN.write_text(json.dumps(seen, indent=2, ensure_ascii=False))
+    write_private(SEEN, json.dumps(seen, indent=2, ensure_ascii=False))
     return out
 
 
@@ -330,7 +339,7 @@ def apply_today(out, api):
                 n["today"] = round(max(0.0, n["current"] - h.get(today, n["current"])), 2)
                 n["histSource"] = "garmin"
     cutoff = (date.today() - timedelta(days=HIST_DAYS)).isoformat()
-    HIST.write_text(json.dumps({d: v for d, v in hist.items() if d >= cutoff}, indent=2))
+    write_private(HIST, json.dumps({d: v for d, v in hist.items() if d >= cutoff}, indent=2))
 
 
 def challenges(api, first, last, totals):
@@ -357,7 +366,7 @@ def challenges(api, first, last, totals):
             if n["start"] and n["start"] > last.isoformat():
                 continue
             out.append(n)
-    (HERE / "raw_challenges.json").write_text(json.dumps(raw, indent=2, ensure_ascii=False))
+    write_private(HERE / "raw_challenges.json", json.dumps(raw, indent=2, ensure_ascii=False))
 
     badges, badge_index = earned_badges(api)
     out = remember_completed(out, first, last, badge_index)
@@ -396,7 +405,7 @@ def main():
         "month": f"{y}-{m:02d}", "monthStart": first.isoformat(), "monthEnd": last.isoformat(),
         "totals": totals, "daily": daily, "sports": sports_summary(api, first, last), "year": year_overview(api, today, totals) if (first.year, first.month) == (today.year, today.month) else None, "challenges": chal, "badges": badges,
     }
-    Path(a.out).write_text(json.dumps(data, indent=2, ensure_ascii=False))
+    write_private(a.out, json.dumps(data, indent=2, ensure_ascii=False))
     print(f"OK -> {a.out}: {totals}, challenges: {len(data['challenges'])}")
 
 

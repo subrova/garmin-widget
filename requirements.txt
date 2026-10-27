@@ -1,1 +1,3 @@
-garminconnect
+# Pinned on purpose: the Garmin API changes now and then, so bump the version deliberately
+# (and run `pip-audit -r requirements.txt` first).
+garminconnect==0.3.17

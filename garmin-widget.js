@@ -12,6 +12,7 @@
     cs: {
       locale: "cs-CZ",
       units: { steps: "kroků", km: "km", minutes: "min", activities: "aktivit" },
+      activity1: "aktivita",
       short: { steps: "kr.", activities: "akt." },
       months: ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"],
       dm: function (day, month) { return day + "." + month + "."; },
@@ -45,6 +46,7 @@
     en: {
       locale: "en-US",
       units: { steps: "steps", km: "km", minutes: "min", activities: "activities" },
+      activity1: "activity",
       short: { steps: "steps", activities: "act." },
       months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
       dm: function (day, month, mon) { return day + " " + mon; },
@@ -93,7 +95,8 @@
     ".gw-bar i{display:block;height:100%;background:var(--gw-ok)}" +
     ".gw-r{display:flex;justify-content:space-between;font-size:13px;opacity:.85}" +
     ".gw-d{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:15px;margin-top:6px;color:var(--gw-mid);font-weight:600}" +
-    ".gw-f{display:grid;grid-template-columns:1fr 1fr;gap:10px}.gw-f .gw-h{font-size:14px;margin-bottom:6px}" +
+    ".gw-f{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}.gw-f .gw-h{display:block;font-size:14px;margin-bottom:6px}" +
+    ".gw-f .gw-h span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}" +
     ".gw-s{font-size:16px;font-weight:400;opacity:.6}" +
     ".gw-hr{display:flex;align-items:center;gap:8px}.gw-th,.gw-lg{background:none;border:0;padding:0;flex:none;text-align:center;font:inherit;line-height:1;color:var(--gw-mut);cursor:pointer}" +
     ".gw-th,.gw-lg{display:flex;align-items:center;justify-content:center;height:20px}.gw-th{width:24px;font-size:18px}.gw-lg{width:26px}.gw-lg svg{display:block;margin:0 auto;border-radius:2px}" +
@@ -120,8 +123,9 @@
     ".gw-pills{display:flex;gap:6px;margin-bottom:10px}.gw-pill{background:none;color:var(--gw-mut);border:1px solid var(--gw-mut);border-radius:999px;padding:3px 12px;font:inherit;font-size:12px;cursor:pointer}" +
     ".gw-pill.gw-on{background:var(--gw-ok);border-color:var(--gw-ok);color:var(--gw-card)}" +
     ".gw-chart{display:block;width:100%;height:auto}.gw-b{fill:var(--gw-ok);cursor:pointer}.gw-b.gw-today{fill:var(--gw-mid)}.gw-b.gw-sel{stroke:var(--gw-txt);stroke-width:1.2}" +
+    ".gw-gl{paint-order:stroke;stroke:var(--gw-card);stroke-width:3px;stroke-linejoin:round}" +
     ".gw-ax{fill:var(--gw-mut);font-size:9px}.gw-goal{stroke:var(--gw-mut);stroke-width:1;stroke-dasharray:3 3}" +
-    ".gw-cap{margin-top:6px;font-size:15px}.gw-cap b{font-weight:700}" +
+    ".gw-cap{margin-top:14px;margin-bottom:5px;font-size:15px}.gw-cap b{font-weight:700}" +
     ".gw-cr{color:inherit;text-decoration:none}.gw-cr:hover{text-decoration:underline}" +
     ".gw-ctl{display:flex;align-items:center;gap:0}" +
     ".gw-u{display:flex;justify-content:space-between;gap:8px;margin:-4px 2px 0;font-size:13px;color:var(--gw-mut)}";
@@ -133,15 +137,18 @@
       var m = Math.round(v), h = Math.floor(m / 60);
       return h ? h + " h" + (m % 60 ? " " + (m % 60) + " min" : "") : m + " min";
     }
-    var name = S.units[unit] || "";
-    return fmt(v, UNIT_DEC[unit] == null ? 1 : UNIT_DEC[unit]) + (withUnit && name ? " " + name : "");
+    var name = (unit === "activities" && Number(v) === 1 ? S.activity1 : own(S.units, unit)) || "";
+    return fmt(v, own(UNIT_DEC, unit) == null ? 1 : UNIT_DEC[unit]) + (withUnit && name ? " " + name : "");
   }
   // value + shortened unit, used for the "remaining" label
   function rest(v, unit) {
     if (unit === "minutes") return val(v, unit);
-    var name = S.short[unit] || S.units[unit] || "";
-    return fmt(v, UNIT_DEC[unit] == null ? 1 : UNIT_DEC[unit]) + " " + name;
+    var name = own(S.short, unit) || own(S.units, unit) || "";
+    return fmt(v, own(UNIT_DEC, unit) == null ? 1 : UNIT_DEC[unit]) + " " + name;
   }
+  // numbers coming from data.json are always forced to real numbers before they go into the HTML
+  function num(v) { var n = Number(v); return isFinite(n) ? n : 0; }
+  function own(obj, key) { return obj && Object.prototype.hasOwnProperty.call(obj, key) ? obj[key] : undefined; }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]; }); }
   // challenge name in the current language (names without a Czech translation stay in English)
   function nm(c, lang) {
@@ -149,7 +156,7 @@
   }
 
   function title(d, btns) {
-    var p = (d.month || "").split("-"), m = S.months[+p[1] - 1] ? S.months[+p[1] - 1] + " " + p[0].slice(2) : "";
+    var p = (d.month || "").split("-"), m = S.months[+p[1] - 1] ? S.months[+p[1] - 1] + " " + esc(String(p[0]).slice(2)) : "";
     return "<span>" + S.title + m + "</span>" + '<span class="gw-hr">' + (d.user ? '<small class="gw-s">' + esc(d.user) + "</small>" : "") + btns + "</span>";
   }
   function stamp(s) {  // e.g. "7.10.26 22:19" (no seconds, two-digit year)
@@ -212,7 +219,7 @@
     var html = "";
     var flags = [];
     var sumTotal = 0, sumOk = 0, sumDone = 0;  // for the summary line: challenges on track / completed
-    function dm(x) { var p = x.split("-"); return S.dm(+p[2], +p[1], STR.en.months[+p[1] - 1].slice(0, 3)); }
+    function dm(x) { var p = String(x).split("-"), mon = STR.en.months[+p[1] - 1]; return mon ? S.dm(+p[2], +p[1], mon.slice(0, 3)) : ""; }
     // "Month" tab: bar chart of the chosen metric per day of the month
     function monthTab() {
       var daily = d.daily;
@@ -248,14 +255,14 @@
       if (pts.length) {
         var room = lastX < W - pr - 48;  // the label goes into the empty space of the future days when there is room
         svg += '<polyline class="gw-goal" fill="none" points="' + pts.join(" ") + '"/>' +
-          '<text class="gw-ax" text-anchor="' + (room ? "start" : "end") + '" x="' + (room ? lastX + 3 : lastX).toFixed(1) + '" y="' + (room ? y(lastG) + 3 : y(lastG) - 3).toFixed(1) + '">' + S.goalLabel + val(lastG, "steps") + "</text>";
+          '<text class="gw-ax gw-gl" text-anchor="' + (room ? "start" : "end") + '" x="' + (room ? lastX + 3 : lastX).toFixed(1) + '" y="' + (room ? y(lastG) + 3 : y(lastG) - 3).toFixed(1) + '">' + S.goalLabel + val(lastG, "steps") + "</text>";
       }
       [1, 5, 10, 15, 20, 25, 30].forEach(function (dd) { if (dd <= n) svg += '<text class="gw-ax" text-anchor="middle" x="' + (pl + (dd - 1) * slot + slot / 2).toFixed(1) + '" y="' + (H - 4) + '">' + dd + "</text>"; });
       svg += "</svg>";
       var pills = ["steps", "km", "minutes"].map(function (m) { return '<button class="gw-pill' + (m === metric ? " gw-on" : "") + '" type="button" data-m="' + m + '">' + S.metrics[m] + "</button>"; }).join("");
       return '<div class="gw-c"><div class="gw-pills">' + pills + "</div>" + svg +
         '<div class="gw-cap"><b>' + dm(days[sel]) + "</b> – " + f(vals[sel]) + "</div>" +
-        '<div class="gw-p">' + S.chartAvg + f(avg) + (best >= 0 ? " · " + S.chartBest + dm(days[best]) + " (" + f(vals[best]) + ")" : "") + "</div></div>" + sportsCard();
+        '<div class="gw-p">' + S.chartAvg + f(avg) + "</div>" + (best >= 0 ? '<div class="gw-p">' + S.chartBest + dm(days[best]) + " (" + f(vals[best]) + ")</div>" : "") + "</div>" + sportsCard();
     }
     // time per sport this month: stacked bar + list (top 4 sports, the rest is merged into "other")
     function sportsCard() {
@@ -268,11 +275,11 @@
       var FIXED = { walking: 1, archery: 2, jump_rope: 3 }, spare = [4, 5, 6], spareAt = 0, col = {};
       top.forEach(function (x) { col[x.type] = x.type === "other" ? "var(--gw-mut)" : "var(--gw-s" + (FIXED[x.type] || spare[spareAt++ % spare.length]) + ")"; });
       var color = function (i, t) { return col[t]; };
-      var nameOf = function (t) { return S.sports[t] || esc(t.replace(/_/g, " ").replace(/^./, function (c) { return c.toUpperCase(); })); };
+      var nameOf = function (t) { return own(S.sports, t) || esc(t.replace(/_/g, " ").replace(/^./, function (c) { return c.toUpperCase(); })); };
       var bar = top.map(function (x, i) { return '<i style="width:' + (x.minutes / total * 100).toFixed(1) + "%;background:" + color(i, x.type) + '"></i>'; }).join("");
       var rows = top.map(function (x, i) {
         return '<div class="gw-sr"><span><i class="gw-dot" style="background:' + color(i, x.type) + '"></i>' + nameOf(x.type) + "</span><span>" +
-          val(x.minutes, "minutes") + " · " + Math.round(x.minutes / total * 100) + " % · " + S.times(x.count) + "</span></div>";
+          val(x.minutes, "minutes") + " · " + Math.round(x.minutes / total * 100) + " % · " + S.times(num(x.count)) + "</span></div>";
       }).join("");
       // second card: average length of one activity per sport (and overall)
       var count = top.reduce(function (a, b) { return a + b.count; }, 0);
@@ -313,21 +320,21 @@
         svg += '<rect class="gw-b' + (k === nowKey ? " gw-today" : "") + (i === sel ? " gw-sel" : "") + '" data-y="' + i + '" x="' + (pl + i * slot + (slot - bw) / 2).toFixed(1) + '" y="' + y(v).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + (H - pb - y(v)).toFixed(1) + '" rx="1.5"><title>' + S.months[i] + " – " + f(v) + "</title></rect>";
       });
       if (goal) svg += '<line class="gw-goal" x1="' + pl + '" x2="' + (W - pr) + '" y1="' + y(goal).toFixed(1) + '" y2="' + y(goal).toFixed(1) + '"/>' +
-        '<text class="gw-ax" text-anchor="end" x="' + (W - pr) + '" y="' + (y(goal) - 3).toFixed(1) + '">' + S.goalLabel + (metric === "steps" ? fmt(goal, 0) : f(goal)) + "</text>";
+        '<text class="gw-ax gw-gl" text-anchor="end" x="' + (W - pr) + '" y="' + (y(goal) - 3).toFixed(1) + '">' + S.goalLabel + (metric === "steps" ? fmt(goal, 0) : f(goal)) + "</text>";
       svg += "</svg>";
       var pills = ["steps", "km", "minutes"].map(function (mm) { return '<button class="gw-pill' + (mm === metric ? " gw-on" : "") + '" type="button" data-m="' + mm + '">' + S.metrics[mm] + "</button>"; }).join("");
       var per = vals[sel] != null ? " (" + S.perDayAvg(f(vals[sel] / dim(sel))) + ")" : "";
       return '<div class="gw-c"><div class="gw-pills">' + pills + "</div>" + svg +
         '<div class="gw-cap"><b>' + S.months[sel] + "</b> – " + f(vals[sel]) + '<span class="gw-p">' + per + "</span></div>" +
-        '<div class="gw-p">' + S.yearTotal + f(total) + (best >= 0 ? " · " + S.bestMonth + S.months[best] + " (" + f(vals[best]) + ")" : "") + "</div></div>" + badgesCard();
+        '<div class="gw-p">' + S.yearTotal + f(total) + "</div>" + (best >= 0 ? '<div class="gw-p">' + S.bestMonth + S.months[best] + " (" + f(vals[best]) + ")</div>" : "") + "</div>" + badgesCard();
     }
     // latest earned badges (name, date, points)
     function badgesCard() {
       var list = (d.badges || []).slice(0, Math.max(1, Math.min(30, parseInt(el.getAttribute("data-badges"), 10) || 10)));  // data-badges, default 10
       if (!list.length) return "";
       var rows = list.map(function (b) {
-        var k = b.expedition || b.kind || "other", ico = '<span class="gw-ex" title="' + (S.expedition[k] || S.badgeKind[k]) + '">' + EXP_ICON[k] + "</span>";
-        return '<div class="gw-sr"><span>' + ico + nm(b, lang) + "</span><span>" + dm(b.date) + (b.points ? " · " + b.points + " " + S.pts(b.points) : "") + "</span></div>";
+        var k = own(EXP_ICON, b.expedition) ? b.expedition : own(EXP_ICON, b.kind) ? b.kind : "other", ico = '<span class="gw-ex" title="' + (own(S.expedition, k) || own(S.badgeKind, k)) + '">' + EXP_ICON[k] + "</span>";
+        return '<div class="gw-sr"><span>' + ico + nm(b, lang) + "</span><span>" + dm(b.date) + (num(b.points) ? " · " + num(b.points) + " " + S.pts(num(b.points)) : "") + "</span></div>";
       }).join("");
       return '<div class="gw-c"><div class="gw-h" style="margin-bottom:8px"><span>' + S.badgesTitle + "</span></div>" + rows + "</div>";
     }
@@ -380,7 +387,7 @@
     if (flags.length) {
       html += '<div class="gw-f">' + flags.map(function (c) {
         var st = c.earned ? [S.done + (c.earnedDate ? " " + dm(c.earnedDate) : ""), "var(--gw-ok)"] : (c.start > iso ? [S.waiting, "var(--gw-mut)"] : (c.end < iso ? [S.notDone, "var(--gw-bad)"] : [S.running, "var(--gw-mid)"]));
-        return '<div class="gw-c' + (c.earned ? " gw-done" : "") + '"><div class="gw-h"><span>' + nm(c, lang) + '</span></div><div class="gw-r">' + dm(c.start) + " – " + dm(c.end) +
+        return '<div class="gw-c' + (c.earned ? " gw-done" : "") + '"><div class="gw-h"><span title="' + nm(c, lang) + '">' + nm(c, lang) + '</span></div><div class="gw-r">' + dm(c.start) + " – " + dm(c.end) +
           '</div><div class="gw-d" style="color:' + st[1] + '">' + st[0] + "</div></div>";
       }).join("") + "</div>";
     }

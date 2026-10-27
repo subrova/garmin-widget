@@ -7,7 +7,8 @@ Only a whitelist of files is served (seen.json, raw_challenges.json, tokens ... 
 Environment:
     REFRESH_KEY       optional; if set, /refresh requires ?key=... (the key is injected into the served
                       index.html, so it does not have to be stored in the repository)
-    REFRESH_MIN_GAP   minimum seconds between two downloads (default 60)
+    REFRESH_MIN_GAP   minimum seconds between two downloads (default 300); /refresh is reachable by anyone who sees
+                      the page, so this limits how often Garmin is queried
     CORS_ORIGIN       optional, e.g. https://your.site  (when embedding the widget on another site)
 """
 import argparse, hmac, json, os, subprocess, sys, threading, time
@@ -20,7 +21,7 @@ PUBLIC = {"index.html": "text/html; charset=utf-8", "garmin-widget.js": "applica
           "data.json": "application/json; charset=utf-8", "manifest.json": "application/manifest+json",
           "icon.svg": "image/svg+xml"}
 KEY = os.getenv("REFRESH_KEY")
-GAP = int(os.getenv("REFRESH_MIN_GAP", "60"))
+GAP = int(os.getenv("REFRESH_MIN_GAP", "300"))
 CORS = os.getenv("CORS_ORIGIN")
 PY = sys.executable
 lock = threading.Lock()
@@ -28,27 +29,37 @@ last = {"t": 0.0, "ok": None, "msg": ""}
 
 
 def run_fetch():
-    """Runs the download; returns (ok, message). Only one at a time and not more often than GAP."""
+    """Runs the download; returns (ok, short message). Only one at a time and not more often than GAP.
+    The details of the run (which may contain paths) only go to the server log, never to the client."""
     if not lock.acquire(blocking=False):
         return True, "download already in progress"
     try:
         if time.time() - last["t"] < GAP:
-            return last["ok"], f"recently updated ({last['msg']})"
+            return bool(last["ok"]), "recently updated"
         r = subprocess.run([PY, str(HERE / "fetch_garmin.py")], capture_output=True, text=True, timeout=240)
-        last.update(t=time.time(), ok=r.returncode == 0, msg=(r.stdout or r.stderr).strip().splitlines()[-1:][0] if (r.stdout or r.stderr).strip() else "")
-        return last["ok"], last["msg"]
+        out = (r.stdout or r.stderr).strip()
+        last.update(t=time.time(), ok=r.returncode == 0, msg=out.splitlines()[-1] if out else "")
+        sys.stderr.write("fetch %s: %s\n" % ("ok" if last["ok"] else "FAILED", last["msg"]))
+        return last["ok"], "updated" if last["ok"] else "update failed"
     except subprocess.TimeoutExpired:
+        sys.stderr.write("fetch timeout\n")
         return False, "timeout"
     finally:
         lock.release()
 
 
 class H(BaseHTTPRequestHandler):
+    server_version = "garmin-widget"  # do not advertise the Python version
+    sys_version = ""
+
     def _send(self, code, body=b"", ctype="text/plain; charset=utf-8", extra=None):
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-cache")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("X-Frame-Options", "DENY")
         if CORS:
             self.send_header("Access-Control-Allow-Origin", CORS)
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")

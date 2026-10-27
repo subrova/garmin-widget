@@ -6,9 +6,24 @@ After=network-online.target
 User=CHANGE_ME
 WorkingDirectory=/opt/garmin-widget
 Environment=REFRESH_KEY=CHANGE_ME_RANDOM
-Environment=REFRESH_MIN_GAP=60
+# minimum seconds between two downloads triggered through /refresh (it is reachable by anyone who sees the page)
+Environment=REFRESH_MIN_GAP=300
 ExecStart=/opt/garmin-widget/venv/bin/python server.py --host 127.0.0.1 --port 8080
 Restart=on-failure
+
+# hardening
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+CapabilityBoundingSet=
+SystemCallArchitectures=native
 
 [Install]
 WantedBy=multi-user.target

@@ -1,0 +1,648 @@
+{
+ "updated": "2026-10-27T14:36:22",
+ "user": "TrailRunner",
+ "month": "2026-10",
+ "monthStart": "2026-10-01",
+ "monthEnd": "2026-10-31",
+ "totals": {
+  "steps": 208217,
+  "km": 163.8,
+  "minutes": 1316
+ },
+ "daily": [
+  {
+   "date": "2026-10-01",
+   "steps": 12657,
+   "km": 9.93,
+   "minutes": 68,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-02",
+   "steps": 10778,
+   "km": 8.32,
+   "minutes": 38,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-03",
+   "steps": 6411,
+   "km": 5.19,
+   "minutes": 28,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-04",
+   "steps": 4695,
+   "km": 3.85,
+   "minutes": 35,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-05",
+   "steps": 9828,
+   "km": 7.59,
+   "minutes": 13,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-06",
+   "steps": 8595,
+   "km": 6.91,
+   "minutes": 39,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-07",
+   "steps": 4040,
+   "km": 3.29,
+   "minutes": 62,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-08",
+   "steps": 8826,
+   "km": 6.81,
+   "minutes": 31,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-09",
+   "steps": 17336,
+   "km": 13.72,
+   "minutes": 40,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-10",
+   "steps": 13761,
+   "km": 10.57,
+   "minutes": 47,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-11",
+   "steps": 7533,
+   "km": 5.82,
+   "minutes": 75,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-12",
+   "steps": 3290,
+   "km": 2.72,
+   "minutes": 62,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-13",
+   "steps": 9147,
+   "km": 7.29,
+   "minutes": 45,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-14",
+   "steps": 7538,
+   "km": 5.88,
+   "minutes": 68,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-15",
+   "steps": 6472,
+   "km": 4.91,
+   "minutes": 32,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-16",
+   "steps": 4308,
+   "km": 3.46,
+   "minutes": 46,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-17",
+   "steps": 2453,
+   "km": 1.84,
+   "minutes": 51,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-18",
+   "steps": 3197,
+   "km": 2.53,
+   "minutes": 76,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-19",
+   "steps": 9056,
+   "km": 6.98,
+   "minutes": 47,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-20",
+   "steps": 10520,
+   "km": 8.36,
+   "minutes": 53,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-21",
+   "steps": 10963,
+   "km": 8.66,
+   "minutes": 40,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-22",
+   "steps": 6081,
+   "km": 4.66,
+   "minutes": 53,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-23",
+   "steps": 13292,
+   "km": 10.4,
+   "minutes": 24,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-24",
+   "steps": 2340,
+   "km": 2.12,
+   "minutes": 59,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-25",
+   "steps": 5745,
+   "km": 4.62,
+   "minutes": 38,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-26",
+   "steps": 7703,
+   "km": 6.06,
+   "minutes": 91,
+   "goal": 7000
+  },
+  {
+   "date": "2026-10-27",
+   "steps": 1652,
+   "km": 1.31,
+   "minutes": 55,
+   "goal": 7000
+  }
+ ],
+ "sports": [
+  {
+   "type": "walking",
+   "minutes": 742.0,
+   "count": 22,
+   "km": 51.3
+  },
+  {
+   "type": "cycling",
+   "minutes": 318.5,
+   "count": 5,
+   "km": 96.8
+  },
+  {
+   "type": "strength_training",
+   "minutes": 203.0,
+   "count": 6,
+   "km": 0.0
+  },
+  {
+   "type": "yoga",
+   "minutes": 96.0,
+   "count": 4,
+   "km": 0.0
+  },
+  {
+   "type": "swimming",
+   "minutes": 84.0,
+   "count": 2,
+   "km": 2.6
+  },
+  {
+   "type": "running",
+   "minutes": 61.0,
+   "count": 2,
+   "km": 9.4
+  }
+ ],
+ "year": {
+  "year": 2026,
+  "months": [
+   {
+    "month": "2026-01",
+    "steps": 243584,
+    "km": 192.43,
+    "minutes": 1450
+   },
+   {
+    "month": "2026-02",
+    "steps": 206215,
+    "km": 162.91,
+    "minutes": 967
+   },
+   {
+    "month": "2026-03",
+    "steps": 224640,
+    "km": 177.47,
+    "minutes": 1838
+   },
+   {
+    "month": "2026-04",
+    "steps": 310322,
+    "km": 245.15,
+    "minutes": 1970
+   },
+   {
+    "month": "2026-05",
+    "steps": 269162,
+    "km": 212.64,
+    "minutes": 1637
+   },
+   {
+    "month": "2026-06",
+    "steps": 231193,
+    "km": 182.64,
+    "minutes": 1432
+   },
+   {
+    "month": "2026-07",
+    "steps": 295786,
+    "km": 233.67,
+    "minutes": 1894
+   },
+   {
+    "month": "2026-08",
+    "steps": 266165,
+    "km": 210.27,
+    "minutes": 1947
+   },
+   {
+    "month": "2026-09",
+    "steps": 305493,
+    "km": 241.34,
+    "minutes": 1918
+   },
+   {
+    "month": "2026-10",
+    "steps": 208217,
+    "km": 163.8,
+    "minutes": 1316
+   }
+  ]
+ },
+ "badges": [
+  {
+   "key": "virtual_climb_mont_blanc",
+   "name": "Mont Blanc",
+   "name_en": "Mont Blanc",
+   "translated": true,
+   "expedition": "climb",
+   "kind": "expedition",
+   "date": "2026-10-18",
+   "points": 4,
+   "count": 1
+  },
+  {
+   "key": "challenge_total_step_100k",
+   "name": "Step into October",
+   "name_en": "Step into October",
+   "translated": true,
+   "expedition": null,
+   "kind": "challenge",
+   "date": "2026-10-14",
+   "points": 2,
+   "count": 1
+  },
+  {
+   "key": "challenge_top_3_weeklysteps",
+   "name": "October Steps Podium",
+   "name_en": "October Steps Podium",
+   "translated": true,
+   "expedition": null,
+   "kind": "challenge",
+   "date": "2026-10-14",
+   "points": 2,
+   "count": 1
+  },
+  {
+   "key": "activity_new_sport",
+   "name": "Try Something New",
+   "name_en": "Try Something New",
+   "translated": true,
+   "expedition": null,
+   "kind": "other",
+   "date": "2026-10-07",
+   "points": 1,
+   "count": 1
+  },
+  {
+   "key": "virtual_hike_camino_de_santiago",
+   "name": "Camino de Santiago",
+   "name_en": "Camino de Santiago",
+   "translated": true,
+   "expedition": "hike",
+   "kind": "expedition",
+   "date": "2026-09-23",
+   "points": 4,
+   "count": 1
+  },
+  {
+   "key": "challenge_total_activity_20",
+   "name": "Active September",
+   "name_en": "Active September",
+   "translated": true,
+   "expedition": null,
+   "kind": "challenge",
+   "date": "2026-09-21",
+   "points": 2,
+   "count": 1
+  },
+  {
+   "key": "wellness_sleep_savant",
+   "name": "Sleep Savant",
+   "name_en": "Sleep Savant",
+   "translated": true,
+   "expedition": null,
+   "kind": "other",
+   "date": "2026-09-16",
+   "points": 1,
+   "count": 1
+  },
+  {
+   "key": "challenge_walk_3mi",
+   "name": "September Weekend Walking",
+   "name_en": "September Weekend Walking",
+   "translated": true,
+   "expedition": null,
+   "kind": "challenge",
+   "date": "2026-09-10",
+   "points": 1,
+   "count": 1
+  },
+  {
+   "key": "virtual_climb_kosciuszko",
+   "name": "Kosciuszko",
+   "name_en": "Kosciuszko",
+   "translated": true,
+   "expedition": "climb",
+   "kind": "expedition",
+   "date": "2026-08-28",
+   "points": 4,
+   "count": 1
+  },
+  {
+   "key": "challenge_total_walk_15_hours",
+   "name": "September Time to Walk",
+   "name_en": "September Time to Walk",
+   "translated": true,
+   "expedition": null,
+   "kind": "challenge",
+   "date": "2026-08-27",
+   "points": 1,
+   "count": 1
+  }
+ ],
+ "challenges": [
+  {
+   "name": "Step into October",
+   "name_en": "Step into October",
+   "key": "challenge_total_step_100k",
+   "translated": true,
+   "source": "badge",
+   "unit": "steps",
+   "target": 100000,
+   "current": 100000,
+   "start": "2026-10-01",
+   "end": "2026-10-14",
+   "earned": true,
+   "earnedDate": "2026-10-14",
+   "kind": "progress",
+   "today": 0,
+   "hist": {},
+   "inferred": true
+  },
+  {
+   "name": "Active October",
+   "name_en": "Active October",
+   "key": "challenge_total_activity_20",
+   "translated": true,
+   "source": "badge",
+   "unit": "activities",
+   "target": 20,
+   "current": 16.0,
+   "start": "2026-10-01",
+   "end": "2026-10-31",
+   "earned": false,
+   "earnedDate": null,
+   "kind": "progress",
+   "today": 1.0,
+   "hist": {
+    "2026-10-01": 0.0,
+    "2026-10-02": 0.0,
+    "2026-10-03": 1.0,
+    "2026-10-04": 1.0,
+    "2026-10-05": 1.0,
+    "2026-10-06": 2.0,
+    "2026-10-07": 2.0,
+    "2026-10-08": 3.0,
+    "2026-10-09": 3.0,
+    "2026-10-10": 3.0,
+    "2026-10-11": 4.0,
+    "2026-10-12": 5.0,
+    "2026-10-13": 5.0,
+    "2026-10-14": 5.0,
+    "2026-10-15": 5.0,
+    "2026-10-16": 6.0,
+    "2026-10-17": 7.0,
+    "2026-10-18": 8.0,
+    "2026-10-19": 9.0,
+    "2026-10-20": 10.0,
+    "2026-10-21": 10.0,
+    "2026-10-22": 11.0,
+    "2026-10-23": 12.0,
+    "2026-10-24": 13.0,
+    "2026-10-25": 14.0,
+    "2026-10-26": 15.0,
+    "2026-10-27": 15.0
+   }
+  },
+  {
+   "name": "October Time to Walk",
+   "name_en": "October Time to Walk",
+   "key": "challenge_total_walk_15_hours",
+   "translated": true,
+   "source": "badge",
+   "unit": "minutes",
+   "target": 900,
+   "current": 789.6,
+   "start": "2026-10-01",
+   "end": "2026-10-31",
+   "earned": false,
+   "earnedDate": null,
+   "kind": "progress",
+   "today": 33.0,
+   "hist": {
+    "2026-10-01": 0.0,
+    "2026-10-02": 40.8,
+    "2026-10-03": 63.6,
+    "2026-10-04": 80.4,
+    "2026-10-05": 101.4,
+    "2026-10-06": 109.2,
+    "2026-10-07": 132.6,
+    "2026-10-08": 169.8,
+    "2026-10-09": 188.4,
+    "2026-10-10": 212.4,
+    "2026-10-11": 240.6,
+    "2026-10-12": 285.6,
+    "2026-10-13": 322.8,
+    "2026-10-14": 349.8,
+    "2026-10-15": 390.6,
+    "2026-10-16": 409.8,
+    "2026-10-17": 437.4,
+    "2026-10-18": 468.0,
+    "2026-10-19": 513.6,
+    "2026-10-20": 541.8,
+    "2026-10-21": 573.6,
+    "2026-10-22": 597.6,
+    "2026-10-23": 629.4,
+    "2026-10-24": 643.8,
+    "2026-10-25": 679.2,
+    "2026-10-26": 702.0,
+    "2026-10-27": 756.6
+   }
+  },
+  {
+   "name": "October Step Month",
+   "name_en": "October Step Month",
+   "key": "challenge_total_step_300k",
+   "translated": true,
+   "source": "badge",
+   "unit": "steps",
+   "target": 300000,
+   "current": 208217.0,
+   "start": "2026-10-01",
+   "end": "2026-10-31",
+   "earned": false,
+   "earnedDate": null,
+   "kind": "progress",
+   "today": 1652.0,
+   "hist": {
+    "2026-10-01": 0.0,
+    "2026-10-02": 12657.0,
+    "2026-10-03": 23435.0,
+    "2026-10-04": 29846.0,
+    "2026-10-05": 34541.0,
+    "2026-10-06": 44369.0,
+    "2026-10-07": 52964.0,
+    "2026-10-08": 57004.0,
+    "2026-10-09": 65830.0,
+    "2026-10-10": 83166.0,
+    "2026-10-11": 96927.0,
+    "2026-10-12": 104460.0,
+    "2026-10-13": 107750.0,
+    "2026-10-14": 116897.0,
+    "2026-10-15": 124435.0,
+    "2026-10-16": 130907.0,
+    "2026-10-17": 135215.0,
+    "2026-10-18": 137668.0,
+    "2026-10-19": 140865.0,
+    "2026-10-20": 149921.0,
+    "2026-10-21": 160441.0,
+    "2026-10-22": 171404.0,
+    "2026-10-23": 177485.0,
+    "2026-10-24": 190777.0,
+    "2026-10-25": 193117.0,
+    "2026-10-26": 198862.0,
+    "2026-10-27": 206565.0
+   }
+  },
+  {
+   "name": "2026 Walking - Stage 4",
+   "name_en": "2026 Walking - Stage 4",
+   "key": "challenge_total_walk_92mi",
+   "translated": true,
+   "source": "badge",
+   "unit": "km",
+   "target": 148.06,
+   "current": 131.06,
+   "start": "2026-10-01",
+   "end": "2026-12-31",
+   "earned": false,
+   "earnedDate": null,
+   "kind": "progress",
+   "today": 1.05,
+   "hist": {
+    "2026-10-01": 0.0,
+    "2026-10-02": 7.94,
+    "2026-10-03": 14.6,
+    "2026-10-04": 18.75,
+    "2026-10-05": 21.83,
+    "2026-10-06": 27.9,
+    "2026-10-07": 33.43,
+    "2026-10-08": 36.06,
+    "2026-10-09": 41.51,
+    "2026-10-10": 52.49,
+    "2026-10-11": 60.95,
+    "2026-10-12": 65.61,
+    "2026-10-13": 67.79,
+    "2026-10-14": 73.62,
+    "2026-10-15": 78.32,
+    "2026-10-16": 82.25,
+    "2026-10-17": 85.02,
+    "2026-10-18": 86.49,
+    "2026-10-19": 88.51,
+    "2026-10-20": 94.09,
+    "2026-10-21": 100.78,
+    "2026-10-22": 107.71,
+    "2026-10-23": 111.44,
+    "2026-10-24": 119.76,
+    "2026-10-25": 121.46,
+    "2026-10-26": 125.16,
+    "2026-10-27": 130.01
+   }
+  },
+  {
+   "name": "October Weekend Walking",
+   "name_en": "October Weekend Walking",
+   "key": "challenge_walk_3mi",
+   "translated": true,
+   "source": "badge",
+   "unit": null,
+   "target": 0,
+   "current": 0,
+   "start": "2026-10-31",
+   "end": "2026-11-01",
+   "earned": false,
+   "earnedDate": null,
+   "kind": "flag"
+  },
+  {
+   "name": "October Steps Podium",
+   "name_en": "October Steps Podium",
+   "key": "challenge_top_3_weeklysteps",
+   "translated": true,
+   "source": "badge",
+   "unit": null,
+   "target": 0,
+   "current": 0,
+   "start": "2026-10-05",
+   "end": "2026-11-01",
+   "earned": true,
+   "earnedDate": "2026-10-14",
+   "kind": "flag"
+  }
+ ]
+}
