@@ -1,9 +1,11 @@
 {
-  "challenge_total_step_100k": "Začněte říjen chůzí",
-  "challenge_total_step_300k": "Kroky v říjnu",
-  "challenge_total_activity_20": "Aktivní říjen",
-  "challenge_total_walk_15_hours": "Říjnová chůze s časovým cílem",
-  "challenge_walk_3mi": "Říjnová víkendová procházka",
-  "challenge_top_3_weeklysteps": "Medaile za říjnové kroky",
-  "challenge_total_walk_92mi": "Chůze 2026 - 4.etapa"
+  "challenge_total_step_100k": "Začněte {mesic} chůzí",
+  "challenge_total_activity_20": "Aktivní {mesic}",
+  "challenge_total_walk_15_hours": "{Mesicni} chůze s časovým cílem",
+  "challenge_total_walk_30mi": "{Mesicni} chůze",
+  "challenge_walk_3mi": "{Mesicni} víkendová procházka",
+  "challenge_top_3_weeklysteps": "Medaile za {mesicne} kroky",
+  "challenge_total_walk_92mi": "Chůze 2026 - 4.etapa",
+  "challenge_total_step_300k_2026_11": "Listopad - měsíc kroků",
+  "challenge_total_step_300k_2026_10": "Kroky v říjnu"
 }

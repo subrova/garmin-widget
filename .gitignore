@@ -9,6 +9,8 @@ seen.json
 baseline.json
 history.json
 months.json
+prev_daily.json
+streak.json
 fetch.log
 *.log
 

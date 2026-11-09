@@ -16,6 +16,8 @@ from pathlib import Path
 
 from garminconnect import Garmin
 
+from czech_names import localize
+
 TOKENS = os.path.expanduser(os.environ.get("GARMINTOKENS", "~/.garminconnect"))
 HERE = Path(__file__).parent
 
@@ -123,7 +125,86 @@ def year_overview(api, today, current):
             write_private(MONTHS_CACHE, json.dumps(cache, indent=2))
     months = [{"month": k, **cache[k]} for k in sorted(cache) if k.startswith(f"{y}-") and k < f"{y}-{today.month:02d}"]
     months.append({"month": f"{y}-{today.month:02d}", **current})
-    return {"year": y, "months": months}
+    # last year, for the comparison in the widget: never changes, so it is computed once (within the same time budget)
+    py, started = y - 1, time.time()
+    for m in range(1, 13):
+        key = f"{py}-{m:02d}"
+        if key in cache:
+            continue
+        if time.time() - started > YEAR_BUDGET_S:
+            break
+        days = calendar.monthrange(py, m)[1]
+        totals, _, errors = month_totals(api, date(py, m, 1), date(py, m, days))
+        if errors < days:  # a month with no data at all (before the account existed) is retried, nothing else is
+            cache[key] = totals
+            write_private(MONTHS_CACHE, json.dumps(cache, indent=2))
+    prev = [{"month": k, **cache[k]} for k in sorted(cache) if k.startswith(f"{py}-")]
+    return {"year": y, "months": months, "prev": {"year": py, "months": prev}}
+
+
+PREV_DAILY_CACHE = HERE / "prev_daily.json"  # per-day values of the previous month (for the comparison chart)
+
+
+def previous_month_daily(api, today):
+    """{"month": "YYYY-MM", "daily": [...]} of the previous month. It is computed once; during the first 3 days of
+    a month it is recomputed once a day to catch late synced data."""
+    last = date(today.year, today.month, 1) - timedelta(days=1)
+    first = last.replace(day=1)
+    key = first.strftime("%Y-%m")
+    try:
+        entry = json.loads(PREV_DAILY_CACHE.read_text()).get(key)
+    except Exception:
+        entry = None
+    if not entry or (today.day <= 3 and entry.get("fetched") != today.isoformat()):
+        _, daily, errors = month_totals(api, first, last)
+        if errors == 0:
+            entry = {"fetched": today.isoformat(), "daily": daily}
+            write_private(PREV_DAILY_CACHE, json.dumps({key: entry}))
+    return {"month": key, "daily": entry["daily"]} if entry else None
+
+
+STREAK_CACHE = HERE / "streak.json"  # series of days with the daily step goal reached (recomputed once a day)
+STREAK_MAX_DAYS = 365 * 8  # how far back the scan goes at most; it stops earlier after a long stretch without any data
+
+
+def streak_info(api, today, base_end):
+    """Series of days in a row with the daily step goal reached, for the widget:
+    {"base": length of the series ending on `base_end` (the day before the data the widget has per day),
+     "baseEnd": that date, "best": the longest series ever (up to yesterday), "bestEnd": its last day}.
+    The whole history is scanned, so it is computed once a day and cached."""
+    try:
+        cached = json.loads(STREAK_CACHE.read_text())
+        if cached.get("date") == today.isoformat() and cached.get("baseEnd") == base_end.isoformat():
+            return {k: cached[k] for k in ("base", "baseEnd", "best", "bestEnd")}
+    except Exception:
+        pass
+    rows, end, empty = {}, today, 0
+    while (today - end).days < STREAK_MAX_DAYS and empty < 3:
+        start = end - timedelta(days=27)
+        got = 0
+        for d in api.get_daily_steps(start.isoformat(), end.isoformat()) or []:
+            steps, goal = d.get("totalSteps") or 0, d.get("stepGoal")
+            rows[d["calendarDate"]] = bool(goal and steps >= goal)
+            got += 1 if steps else 0
+        empty = empty + 1 if not got else 0
+        end = start - timedelta(days=1)
+    yesterday = today - timedelta(days=1)
+    best = best_end = run = 0
+    base = 0
+    prev = None
+    for k in sorted(rows):
+        d = date.fromisoformat(k)
+        if d > yesterday:
+            break
+        run = run + 1 if rows[k] and prev and (d - prev).days == 1 and run else (1 if rows[k] else 0)
+        prev = d
+        if run > best:
+            best, best_end = run, k
+        if d == base_end:
+            base = run
+    info = {"base": base, "baseEnd": base_end.isoformat(), "best": best, "bestEnd": best_end or None}
+    write_private(STREAK_CACHE, json.dumps({"date": today.isoformat(), **info}))
+    return info
 
 
 UNIT_MAP = {  # Garmin unit/metric name -> our unit
@@ -133,7 +214,9 @@ UNIT_MAP = {  # Garmin unit/metric name -> our unit
 }
 
 
-# Czech names keyed by badgeKey (the API returns English names); add new ones to names.cs.json
+# Czech names keyed by badgeKey (the API returns English names); add new ones to names.cs.json; the month in a name
+# is a placeholder that is filled in from the key of the challenge (see czech_names.py); a name for one month only
+# is added under the full key, e.g. "challenge_total_step_300k_2026_11"
 NAMES_CS = json.loads((HERE / "names.cs.json").read_text()) if (HERE / "names.cs.json").exists() else {}
 
 # keys of challenges to hide (list in hide.json, e.g. ["challenge_total_step_100k"])
@@ -141,6 +224,19 @@ HIDE = set(json.loads((HERE / "hide.json").read_text())) if (HERE / "hide.json")
 
 # badgeUnitId -> (unit, multiplier): 1 = meters, 3 = activity count, 5 = steps, 7 = seconds
 BADGE_UNITS = {1: ("km", 0.001), 3: ("activities", 1), 5: ("steps", 1), 7: ("minutes", 1 / 60)}
+
+
+def czech_name(badge_key):
+    """Czech name of a challenge: an entry for the exact key (e.g. challenge_total_step_300k_2026_11) wins over the
+    general template of the key without year and month; None when there is none"""
+    badge_key = badge_key or ""
+    template = NAMES_CS.get(badge_key) or NAMES_CS.get(re.sub(r"_\d{4}_\d{2}$", "", badge_key))
+    return localize(template, key_month(badge_key))
+
+
+def key_month(badge_key):
+    m = re.search(r"_\d{4}_(\d{2})$", badge_key or "")
+    return int(m.group(1)) if m else None
 
 
 def normalize_challenge(c, source):
@@ -163,8 +259,9 @@ def normalize_challenge(c, source):
     if unit == "minutes" and "second" in unit_raw:
         mult = 1 / 60
     key = re.sub(r"_\d{4}_\d{2}$", "", c.get("badgeKey") or "")  # without the trailing year and month
+    cs = czech_name(c.get("badgeKey"))
     return {
-        "name": NAMES_CS.get(key, name), "name_en": name, "key": key, "translated": key in NAMES_CS, "source": source, "unit": unit,
+        "name": cs or name, "name_en": name, "key": key, "translated": cs is not None, "source": source, "unit": unit,
         "target": None if target is None else round(float(target) * mult, 2),
         "current": None if progress is None else round(float(progress) * mult, 2),
         "start": str(start)[:10] if start else None, "end": str(end)[:10] if end else None,
@@ -200,8 +297,9 @@ def earned_badges(api):
         if key.startswith("virtual_"):
             expedition = "climb" if b.get("badgeUnitId") == 2 else "hike"
         kind = "expedition" if expedition else "challenge" if key.startswith("challenge_") else "other"
-        shown.append({"key": key, "name": b.get("badgeName") if expedition else NAMES_CS.get(key, b.get("badgeName")),
-                      "name_en": b.get("badgeName"), "translated": True if expedition else key in NAMES_CS,
+        cs = None if expedition else czech_name(b.get("badgeKey"))
+        shown.append({"key": key, "name": cs or b.get("badgeName"),
+                      "name_en": b.get("badgeName"), "translated": True if expedition else cs is not None,
                       "expedition": expedition, "kind": kind, "date": b["badgeEarnedDate"][:10],
                       "points": b.get("badgePoints"), "count": b.get("badgeEarnedNumber")})
     return shown, index
@@ -399,11 +497,20 @@ def main():
     api = login()
     totals, daily, _ = month_totals(api, first, last)
     chal, badges = challenges(api, first, last, totals)
+    current_month = (first.year, first.month) == (today.year, today.month)
+    prev = previous_month_daily(api, today) if current_month else None
+    streak = None
+    if prev:
+        try:
+            streak = streak_info(api, today, date.fromisoformat(prev["month"] + "-01") - timedelta(days=1))
+        except Exception as e:  # the series is a nice-to-have: a failure must not spoil the whole run
+            print(f"warn: streak: {e}", file=sys.stderr)
     data = {
         "updated": datetime.now().isoformat(timespec="seconds"),
         "user": api.get_full_name(),
         "month": f"{y}-{m:02d}", "monthStart": first.isoformat(), "monthEnd": last.isoformat(),
-        "totals": totals, "daily": daily, "sports": sports_summary(api, first, last), "year": year_overview(api, today, totals) if (first.year, first.month) == (today.year, today.month) else None, "challenges": chal, "badges": badges,
+        "totals": totals, "daily": daily, "sports": sports_summary(api, first, last), "year": year_overview(api, today, totals) if (first.year, first.month) == (today.year, today.month) else None,
+        "prev": prev, "streak": streak, "challenges": chal, "badges": badges,
     }
     write_private(a.out, json.dumps(data, indent=2, ensure_ascii=False))
     print(f"OK -> {a.out}: {totals}, challenges: {len(data['challenges'])}")
